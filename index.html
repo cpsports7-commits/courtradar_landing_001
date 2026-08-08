@@ -285,8 +285,8 @@ h1.glitch{animation:glitch .38s steps(2,end)}
 
 /* UI wartet, bis der Trailer durch ist */
 .hud,.kicker,h1 span,.tag,.count,.signup,.hint,.bottom,.bracket{animation-play-state:paused}
-body.go .hud,body.go .kicker,body.go h1 span,body.go .tag,body.go .count,
-body.go .signup,body.go .hint,body.go .bottom,body.go .bracket{animation-play-state:running}
+body.revealed .hud,body.revealed .kicker,body.revealed h1 span,body.revealed .tag,body.revealed .count,
+body.revealed .signup,body.revealed .hint,body.revealed .bottom,body.revealed .bracket{animation-play-state:running}
 
 /* offline / webview fallbacks */
 @supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
@@ -870,14 +870,14 @@ const TL=(function(){
   function finish(){
     timers.forEach(clearTimeout); timers=[];
     tr.classList.add('clear','open');
-    document.body.classList.add('go');
+    document.body.classList.add('revealed');
     if(window.__startScene) window.__startScene();
     at(700,()=>tr.classList.add('gone'));
   }
   function run(){
     timers.forEach(clearTimeout); timers=[];
     tr.classList.remove('gone','clear','open'); tr.classList.add('bars');
-    document.body.classList.remove('go');
+    document.body.classList.remove('revealed');
     card.textContent=''; card.className=''; ln.className='ln';
     if(REDUCE){ finish(); return; }
     if(window.SFX){ SFX.pad(true); SFX.heart(); }
@@ -898,7 +898,7 @@ const TL=(function(){
       ln.textContent='SEASON 01 // INITIALIZING'; ln.classList.add('on');
       tr.classList.add('clear'); if(window.SFX) SFX.riser(1.15); if(window.__startScene) window.__startScene(); });
     at(3050,()=>{ ln.classList.remove('on'); ln.style.opacity=0;
-      tr.classList.add('open'); document.body.classList.add('go'); bang(flash);
+      tr.classList.add('open'); document.body.classList.add('revealed'); bang(flash);
       if(window.SFX){ SFX.crack(); SFX.boom(); SFX.braam(41,1.15,2.8); } });
     at(3700,()=>tr.classList.add('gone'));
   }
@@ -911,8 +911,8 @@ setTimeout(()=>{ const tp=document.getElementById('tip'); if(!tp) return;
 /* Failsafe: falls die Sequenz aus irgendeinem Grund hängt, nach 7 s alles zeigen */
 setTimeout(()=>{
   const tr=document.getElementById('trailer');
-  if(!document.body.classList.contains('go')||(tr&&!tr.classList.contains('gone'))){
-    document.body.classList.add('go','forced');
+  if(!document.body.classList.contains('revealed')||(tr&&!tr.classList.contains('gone'))){
+    document.body.classList.add('revealed','forced');
     if(tr) tr.classList.add('gone');
     if(window.__startScene) window.__startScene();
   }

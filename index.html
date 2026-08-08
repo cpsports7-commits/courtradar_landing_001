@@ -3,7 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>COURTRADAR — Season 01</title>
+<title>COURTRADAR — Your court. Your game.</title>
+<meta name="description" content="Find courts. Challenge players. Improve every game. Early access opens October 20.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="COURTRADAR — Your court. Your game.">
+<meta property="og:description" content="Find courts. Challenge players. Improve every game. Early access opens October 20.">
+<meta property="og:image" content="/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="COURTRADAR — Your court. Your game.">
+<meta name="twitter:description" content="Find courts. Challenge players. Improve every game.">
+<meta name="twitter:image" content="/og.jpg">
+<meta name="theme-color" content="#03060C">
 <script>document.documentElement.className="js";</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,6 +99,11 @@ body{background:var(--void);color:var(--chalk);font-family:"Inter",system-ui,san
   font-size:9px;letter-spacing:.2em;color:var(--mute);opacity:0;transition:opacity .4s}
 .score.on{opacity:1}
 @media(max-width:780px){.power{bottom:140px}.score{bottom:196px}.snote{bottom:172px}}
+.tip{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:9;
+  font-family:var(--hud);font-size:9px;letter-spacing:.24em;color:var(--mute);
+  white-space:nowrap;opacity:0;transition:opacity .6s;pointer-events:none}
+.tip.on{opacity:1}
+@media(max-width:780px){.tip{bottom:104px}}
 .snote{position:fixed;right:14px;bottom:186px;z-index:9;max-width:min(230px,62vw);
   text-align:right;font-family:var(--hud);font-size:8.5px;letter-spacing:.16em;
   color:var(--signal);opacity:0;transition:opacity .4s;pointer-events:none;line-height:1.7}
@@ -123,8 +140,8 @@ h1.glitch{animation:glitch .38s steps(2,end)}
 
 .tag{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   font-weight:400;font-style:normal;text-transform:none;letter-spacing:0;
-  margin-top:clamp(16px,2.8vh,26px);font-size:clamp(15px,4vw,18px);color:#9DAEC6;
-  line-height:1.45;max-width:22ch;text-wrap:balance;
+  margin-top:clamp(16px,2.8vh,26px);font-size:clamp(14.5px,3.8vw,17px);color:#A5B5CC;
+  line-height:1.6;max-width:26ch;text-wrap:balance;
   opacity:0;animation:rise 1s 1.05s ease forwards}
 
 /* countdown */
@@ -309,6 +326,10 @@ body.forced #trailer{display:none!important}
   <button class="skip" id="skip">SKIP ▸</button>
 </div>
 
+<form name="waitlist" netlify netlify-honeypot="bot-field" hidden>
+  <input type="email" name="email"><input name="bot-field">
+</form>
+
 <main class="screen">
   <header class="hud">
     <div class="brand">
@@ -334,10 +355,10 @@ body.forced #trailer{display:none!important}
       <span class="o" style="animation-delay:.79s">Your</span>
       <span class="o" style="animation-delay:.92s">game.</span>
     </h1>
-    <p class="tag">Find the run before you leave the house.</p>
+    <p class="tag">Find courts. Challenge players.<br>Improve every game.</p>
 
     <div class="count">
-      <div class="count-l">SEASON 01 UNLOCKS IN</div>
+      <div class="count-l">EARLY ACCESS OPENS IN</div>
       <div class="clock">
         <div class="unit"><div class="n" id="cD">--</div><div class="l">DAYS</div></div>
         <div class="unit"><div class="n" id="cH">--</div><div class="l">HRS</div></div>
@@ -350,7 +371,7 @@ body.forced #trailer{display:none!important}
       <input id="mail" type="email" placeholder="your@email.com" aria-label="Email address" autocomplete="email">
       <button class="go" id="join">Claim your spot</button>
     </div>
-    <p class="hint" id="hint">EARLY ACCESS OPENS CITY BY CITY · TAP THE COURT TO SEND A PULSE</p>
+    <p class="hint" id="hint">EARLY ACCESS OPENS CITY BY CITY</p>
   </section>
 
   <footer class="bottom">
@@ -379,6 +400,7 @@ body.forced #trailer{display:none!important}
   <div class="power" id="power" aria-hidden="true"><div class="zone"></div><div class="lvl" id="plvl"></div></div>
   <div class="shout" id="shout" aria-hidden="true"></div>
   <div class="score" id="score" aria-hidden="true">0 / 0</div>
+  <div id="tip" class="tip">HOLD ANYWHERE TO SHOOT</div>
   <div id="snote" class="snote"></div>
   <div class="tools">
     <button class="snd" id="snd" aria-pressed="false" aria-label="Toggle sound">♪</button>
@@ -388,7 +410,7 @@ body.forced #trailer{display:none!important}
 
 <script>
 /* ═══ SET YOUR REAL LAUNCH DATE HERE ═══ */
-const SEASON_START = new Date('2026-10-01T19:00:00+02:00');
+const SEASON_START = new Date('2026-10-20T19:00:00+02:00');
 
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SHOW_CREW = false;   /* auf true setzen, um die 3-gegen-3-Silhouetten zurückzuholen */
@@ -884,6 +906,8 @@ const TL=(function(){
   return {run,finish};
 })();
 TL.run();
+setTimeout(()=>{ const tp=document.getElementById('tip'); if(!tp) return;
+  tp.classList.add('on'); setTimeout(()=>tp.classList.remove('on'),6000); },6500);
 /* Failsafe: falls die Sequenz aus irgendeinem Grund hängt, nach 7 s alles zeigen */
 setTimeout(()=>{
   const tr=document.getElementById('trailer');
@@ -1114,9 +1138,18 @@ blip=()=>{};
       hint.textContent='CHECK THAT ADDRESS — TRY NAME@EMAIL.COM';
       hint.style.color='#FF6B1A'; mail.focus(); if(window.SFX) SFX.err(); return;
     }
-    mail.disabled=true; mail.value="Spot reserved. We'll mail you before launch.";
-    go.textContent="You're in"; go.disabled=true;
-    hint.textContent='SEE YOU ON THE COURT.'; hint.style.color='#4C93FF';
+    go.disabled=true; go.textContent='Sending';
+    const body=new URLSearchParams({'form-name':'waitlist','email':v}).toString();
+    fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body})
+      .then(()=>{
+        mail.disabled=true; mail.value="Spot reserved. We'll mail you before launch.";
+        go.textContent="You're in";
+        hint.textContent='SEE YOU ON THE COURT.'; hint.style.color='#4C93FF';
+      })
+      .catch(()=>{
+        go.disabled=false; go.textContent='Claim your spot';
+        hint.textContent='COULD NOT SEND — TRY AGAIN'; hint.style.color='#FF6B1A';
+      });
     if(window.__pulse) window.__pulse();
     if(window.SFX) SFX.confirm();
   }

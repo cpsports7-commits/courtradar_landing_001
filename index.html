@@ -200,6 +200,13 @@ h1.glitch{animation:glitch .38s steps(2,end)}
 .legal{max-width:330px;margin-top:12px;font-size:8px;line-height:1.55;color:#4E596C;
   opacity:0;animation:rise 1s 1.9s cubic-bezier(.22,1,.36,1) forwards}
 
+.legal a{color:#7E8CA2;border-bottom:1px solid rgba(255,255,255,.14)}
+.legal a:hover{color:var(--signal);border-bottom-color:rgba(255,107,26,.5)}
+.lawlinks{margin-top:12px;font-family:var(--hud);font-size:8.5px;letter-spacing:.18em;
+  text-transform:uppercase;opacity:0;animation:rise 1s 2.1s cubic-bezier(.22,1,.36,1) forwards}
+.lawlinks a{color:#5E6B80;text-decoration:none;border:0}
+.lawlinks a:hover{color:var(--signal)}
+@media(max-width:780px){.lawlinks{font-size:8px;margin-top:10px}}
 .hint{margin-top:14px;font-family:var(--hud);font-size:9.5px;letter-spacing:.13em;color:#7E8CA2;
   opacity:0;animation:rise 1s 1.75s ease forwards;transition:color .3s}
 
@@ -405,7 +412,8 @@ body.forced #trailer{display:none!important}
       <button class="go" id="join">Claim your spot</button>
     </div>
     <p class="hint" id="hint">EARLY ACCESS OPENS CITY BY CITY</p>
-    <p class="legal">Mit dem Absenden stimmst du zu, dass wir deine E-Mail speichern, um dich zum Start von Season 01 zu benachrichtigen. Keine Weitergabe an Dritte, kein Newsletter, jederzeit widerrufbar.</p>
+    <p class="legal">Mit dem Absenden stimmst du zu, dass wir deine E-Mail speichern, um dich zum Start von Season 01 zu benachrichtigen. Keine Weitergabe an Dritte, kein Newsletter, jederzeit widerrufbar. Mehr in der <a href="/datenschutz.html">Datenschutzerklärung</a>.</p>
+    <p class="lawlinks"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a></p>
   </section>
 
   <footer class="bottom">

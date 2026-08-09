@@ -443,7 +443,7 @@ body.forced #trailer{display:none!important}
 
 <script>
 /* ═══ SET YOUR REAL LAUNCH DATE HERE ═══ */
-const SEASON_START = new Date('2026-10-20T19:00:00+02:00');
+const SEASON_START = new Date('2026-09-13T19:00:00+02:00');
 
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SHOW_CREW = false;
@@ -456,12 +456,11 @@ let audioOn = false, blip = null;
   const c=document.getElementById('cloud'), ctx=c.getContext('2d');
   /* Kamerapositionen — harte Schnitte wie im Trailer */
   const CAMS=[
-    {tilt:.82, cz:41, yaw:0.62, drift:.045, dolly:-.35, fov:1.62, dwell:11},
-    {tilt:.16, cz:30, yaw:2.05, drift:.022, dolly:.75,  fov:1.10, dwell:9},  /* Weitwinkel, tief am Boden */
-    {tilt:1.36,cz:50, yaw:1.15, drift:.055, dolly:-.5,  fov:1.95, dwell:9},  /* Draufsicht, Radarschirm */
-    {tilt:.55, cz:38, yaw:0.95, drift:0,    dolly:0,    fov:1.62, dwell:3.4, reveal:1},
-    {tilt:.34, cz:24, yaw:3.55, drift:.030, dolly:.9,   fov:1.25, dwell:10}, /* nah am Ring, zieht zurück */
-    {tilt:1.02,cz:44, yaw:5.20, drift:-.04, dolly:-.7,  fov:2.10, dwell:9}   /* Tele, fährt hinein */
+    {tilt:.82, cz:41, yaw:0.62, drift:.070, dolly:-.55, fov:1.62, dwell:8},
+    {tilt:.16, cz:30, yaw:2.05, drift:.040, dolly:1.15, fov:1.10, dwell:7},  /* Weitwinkel, tief am Boden */
+    {tilt:1.36,cz:50, yaw:1.15, drift:.085, dolly:-.8,  fov:1.95, dwell:7.5},  /* Draufsicht, Radarschirm */
+    {tilt:.34, cz:24, yaw:3.55, drift:.048, dolly:1.35, fov:1.25, dwell:8}, /* nah am Ring, zieht zurück */
+    {tilt:1.02,cz:44, yaw:5.20, drift:-.065,dolly:-1.0, fov:2.10, dwell:7.5}   /* Tele, fährt hinein */
   ];
   let camIdx=0, camClock=0, camOn=false, revealK=0;
   const CUT=document.getElementById('cutflash');
@@ -665,6 +664,11 @@ let audioOn = false, blip = null;
     });
   });
 
+  for(let i=0;i<P.length;i++){ const q=P[i];
+    q.q  = 0.40 + rnd()*1.10;      /* Intensitätsstreuung */
+    q.rs = 0.80 + rnd()*0.55;      /* Größenstreuung */
+  }
+
   const dust=[]; for(let i=0;i<95;i++) dust.push({x:(rnd()-.5)*36,y:rnd()*7.5,z:(rnd()-.5)*21,p:rnd()*6.28});
 
   /* ── 3-on-3 shadow runners ── */
@@ -860,7 +864,7 @@ let audioOn = false, blip = null;
 
   const yawEl=document.getElementById('tYaw'),scanEl=document.getElementById('tScan');
   const ease=x=>1-Math.pow(1-x,3);
-  let t=REDUCE?9:0, hudT=0, running=REDUCE, lastPing=-9;
+  let t=REDUCE?9:0, hudT=0, running=REDUCE;
 
   function draw(){
     if(!REDUCE) requestAnimationFrame(draw);
@@ -888,6 +892,7 @@ let audioOn = false, blip = null;
       }
     }
     zoom+=(zoomTo-zoom)*0.09;
+    if(Math.abs(zoom)<0.012&&Math.abs(zoomTo)<0.012){ zoom=0; zoomTo=0; }
     const zAct=Math.abs(zoom)>0.02;
     if(zAct){
       const L=Math.floor(zoom), fr=zoom-L;
@@ -920,13 +925,18 @@ let audioOn = false, blip = null;
     const byc=3.6+Math.sin(t*2.1)*.22;
     const port=H/W>1.3;
     const f=Math.min(W,H)*FOV*(port?1.72:1);
-    const scanX=-HW-2+((t*4.6)%((HW+2)*2));
-    const ox=W/2+px*38, oy=H*(port?0.29:0.54)+py*24;
+    const scanX=-HW-2+((t*6.4)%((HW+2)*2));
+    const liv=intro<1?0:1;
+    const ox=W/2+px*38+Math.sin(t*0.83)*2.4*liv,
+          oy=H*(port?0.29:0.54)+py*24+Math.cos(t*0.61)*1.9*liv;
 
-    ctx.clearRect(0,0,W,H);
+    ctx.globalCompositeOperation='source-over';
+    if((camOn&&camClock<0.07)||intro<1||zAct) ctx.clearRect(0,0,W,H);
+    else { ctx.fillStyle='rgba(0,0,0,.44)'; ctx.fillRect(0,0,W,H); }
     ctx.globalCompositeOperation='lighter';
 
-    const g0=zAct?Math.floor(zoom)-1:0, g1=zAct?Math.floor(zoom)+2:0;
+    const narrow=W<820;
+    const g0=zAct?Math.floor(zoom)-1:0, g1=zAct?Math.floor(zoom)+(narrow?1:2):0;
     for(let gen=g0;gen<=g1;gen++){
     const GS=Math.pow(ZR,gen-zoom);
     let gf=1;
@@ -957,10 +967,11 @@ let audioOn = false, blip = null;
       const x1=XS*cy-ZS*sy, z1=XS*sy+ZS*cy;
       const y2=YS*cT-z1*sT, z2=YS*sT+z1*cT+camZ;
       if(z2<5) continue;
-      const sx=ox+f*x1/z2, sy2=oy-f*y2/z2;
+      let sx=ox+f*x1/z2, sy2=oy-f*y2/z2;
+      if(sx<-60||sx>W+60||sy2<-60||sy2>H+60) continue;
       const depth=1-Math.min(1,(z2-camZ+21)/46);
       const d=Math.abs(X-scanX);
-      let hot=d<1.9?Math.pow(1-d/1.9,1.6):0;
+      let hot=d<1.15?Math.pow(1-d/1.15,1.35):0;
       if(ballMix>.02) hot=Math.max(hot,p.seam?ballMix*.85:ballMix*.12);
       /* radial pulses */
       const rr=Math.sqrt(X*X+Z*Z);
@@ -970,18 +981,40 @@ let audioOn = false, blip = null;
         if(dd<2.2) hot=Math.max(hot,(1-dd/2.2)*(1-age/2.2));
       }
       const coc=FX.dof?Math.min(1,Math.abs(z2-camZ)/24):0;
-      const r=Math.max(.55,f/z2*0.052)*p.w*(1+hot*1.5)*(1+coc*1.45);
-      let a=Math.min(1,(0.07+depth*0.30+hot*0.85)*p.w);
+      const r=Math.max(.40,f/z2*0.052*p.rs)*p.w*(1+hot*1.7)*(1+coc*1.5);
+      let a=(0.045+depth*0.30+hot*1.0)*p.w*p.q;
       if(p.ana){ a*=(.55+revealK*3.2+imgW*3.4);
         if(revealK>.12) hot=Math.max(hot,revealK*.92);
         if(imgW>.12) hot=Math.max(hot,imgW*.9); }
-      a*=(1-coc*.48);
-      ctx.beginPath(); ctx.arc(sx,sy2,r,0,6.283);
-      if(hot>0.04){
-        ctx.fillStyle=`rgba(255,${(107+140*hot)|0},${(26+95*hot)|0},${a})`;
-        if(hot>.62){ctx.shadowColor='rgba(255,150,60,.55)';ctx.shadowBlur=6*hot;}
-      }else{ ctx.fillStyle=`rgba(76,147,255,${a*0.8})`; ctx.shadowBlur=0; }
-      ctx.fill(); ctx.shadowBlur=0;
+      a*=(1-coc*.50)*gf;
+      /* Kontrastkurve: viele sehr dunkle Punkte, wenige wirklich helle */
+      a=Math.min(1, a*a*2.1 + a*0.14);
+      if(a<0.012) continue;
+      /* Farbe nach Tiefe — hinten kaltes Marineblau, vorn helles Stahlblau */
+      let CR,CG,CB;
+      if(hot>0.03){
+        const hh=Math.min(1,hot*1.3);
+        CR=255; CG=(118+132*hh)|0; CB=(38+160*hh*hh)|0;
+      }else{
+        const dd2=depth*depth;
+        CR=(30+92*dd2)|0; CG=(70+126*dd2)|0; CB=(124+118*dd2)|0;
+      }
+      const col='rgba('+CR+','+CG+','+CB+',';
+      ctx.fillStyle=col+a+')';
+      if(r<0.95){
+        const qx=Math.round(sx*DPR)/DPR, qy=Math.round(sy2*DPR)/DPR, u=1/DPR;
+        ctx.fillRect(qx,qy,u,u);
+      }
+      else {
+        ctx.beginPath(); ctx.arc(sx,sy2,r,0,6.283); ctx.fill();
+        if(r>1.6){ ctx.beginPath(); ctx.arc(sx,sy2,r*0.42,0,6.283);
+          ctx.fillStyle=col+Math.min(1,a*1.9)+')'; ctx.fill(); }
+      }
+      /* Bloom: zweiter, sehr schwacher Ring nur um die hellsten Punkte */
+      if(r>0.7&&(a>0.40||hot>0.32)){
+        ctx.beginPath(); ctx.arc(sx,sy2,r*2.5,0,6.283);
+        ctx.fillStyle=col+(a*0.055)+')'; ctx.fill();
+      }
     }
     }
 
@@ -1147,7 +1180,7 @@ let audioOn = false, blip = null;
       const y2=yy*cT-z1*sT, z2=yy*sT+z1*cT+camZ;
       if(z2<5) continue;
       ctx.beginPath(); ctx.arc(ox+f*x1/z2, oy-f*y2/z2, Math.max(.4,f/z2*0.02),0,6.283);
-      ctx.fillStyle='rgba(190,215,255,.17)'; ctx.fill();
+      ctx.fillStyle='rgba(170,200,245,.085)'; ctx.fill();
     }
     ctx.globalCompositeOperation='source-over';
 

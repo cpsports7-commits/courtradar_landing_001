@@ -197,7 +197,7 @@ h1.glitch{animation:glitch .38s steps(2,end)}
 .go:hover{filter:brightness(1.15)}
 .go:disabled{background:var(--data);cursor:default}
 .go:focus-visible,.signup input:focus-visible{outline:2px solid var(--chalk);outline-offset:3px}
-.legal{max-width:376px;margin-top:14px;font-size:9.5px;line-height:1.6;color:#5C687D;
+.legal{max-width:330px;margin-top:12px;font-size:8px;line-height:1.55;color:#4E596C;
   opacity:0;animation:rise 1s 1.9s cubic-bezier(.22,1,.36,1) forwards}
 
 .hint{margin-top:14px;font-family:var(--hud);font-size:9.5px;letter-spacing:.13em;color:#7E8CA2;
@@ -581,7 +581,34 @@ let audioOn = false, blip = null;
       p.push([side*(0.42+0.30*Math.cos(q*1.35)) + (rr()-.5)*.05, q*0.92]);}
     return p.slice(0,NA);
   })();
-  const SHAPES=[SHAPE_DUNK,SHAPE_LOGO,SHAPE_BALL];
+  const SHAPE_CITY=(function(){
+    /* Türme als Blöcke, Antennen als Striche — Rhein-Main-Silhouette */
+    const B=[  /* x0, x1, Höhe */
+      [-.98,-.80,.20],[-.82,-.68,.34],[-.70,-.58,.26],
+      [-.60,-.44,.62],[-.46,-.34,.40],[-.36,-.22,.86],   /* Messeturm */
+      [-.24,-.12,.50],[-.14,-.02,.72],
+      [ .00, .14,1.00],                                   /* Hauptturm */
+      [ .12, .24,.44],[ .22, .38,.68],[ .36, .48,.34],
+      [ .46, .62,.56],[ .60, .74,.30],[ .72, .88,.42],[ .86, .99,.22]
+    ];
+    const ANT=[[-.29,.86,-.29,1.12],[.07,1.00,.07,1.30],[.30,.68,.30,.84]];
+    const p2=[]; let sd6=53; const rr=()=>(sd6=(sd6*48271)%2147483647)/2147483647;
+    let area=0; B.forEach(b=>area+=(b[1]-b[0])*b[2]);
+    const nFill=Math.round(NA*.80);
+    B.forEach(b=>{
+      const k=Math.max(4,Math.round(nFill*(b[1]-b[0])*b[2]/area));
+      for(let i=0;i<k;i++)
+        p2.push([b[0]+rr()*(b[1]-b[0]), -0.55+rr()*b[2]]);
+    });
+    const nAnt=Math.round(NA*.06);
+    for(let i=0;i<nAnt;i++){
+      const a=ANT[i%ANT.length], q=rr();
+      p2.push([a[0]+(a[2]-a[0])*q+(rr()-.5)*.012, -0.55+(a[1]+(a[3]-a[1])*q)]);
+    }
+    while(p2.length<NA) p2.push([(rr()*2-1), -0.56+(rr()-.5)*.02]);  /* Horizont */
+    return p2.slice(0,NA);
+  })();
+  const SHAPES=[SHAPE_DUNK,SHAPE_LOGO,SHAPE_BALL,SHAPE_CITY];
 
   const ANA_START=P.length;
   for(let i=0;i<640;i++){ add((rnd()-.5)*HW*2.15,0,(rnd()-.5)*HH*2.15,.34);
@@ -643,26 +670,14 @@ let audioOn = false, blip = null;
   const ZOUT=[                              /* Ebenen beim Herauszoomen */
     {t:.34, y:-0.75, z:44, f:1.30},
     {t:1.15,y:-1.55, z:52, f:2.05},
-    {t:.15, y:-2.40, z:36, f:1.05}
+    {t:.15, y:-2.40, z:36, f:1.05},
+    {t:.07, y:-3.20, z:58, f:1.55}      /* fast auf Augenhöhe, weit weg */
   ];
   const camAt=L=>{
     if(L>=0){const n=ZCAM.length;return ZCAM[((L%n)+n)%n];}
     return ZOUT[Math.min(ZOUT.length-1,-L-1)];
   };
-  const setZoom=v=>{ zoomTo=Math.max(-3.15,Math.min(6,v)); };
-  /* Für jede Ausz​oom-Ebene: Bildpunkt + Tiefe -> Weltposition */
-  const IMGW=SHAPES.map((shape,si)=>{
-    const C=camAt(-(si+1)), S=0.30/(C.f/1.62);
-    const cT2=Math.cos(C.t), sT2=Math.sin(C.t);
-    const yaw=0.62+C.y, cy2=Math.cos(yaw), sy2=Math.sin(yaw);
-    let sd5=17+si*13; const rr=()=>(sd5=(sd5*48271)%2147483647)/2147483647;
-    return shape.map(q=>{
-      const d=C.z*(0.62+rr()*0.75);
-      const a=q[0]*S*d, b=q[1]*S*d, z=d-C.z;
-      const Y=b*cT2+z*sT2, z1=-b*sT2+z*cT2;
-      return [a*cy2+z1*sy2, Y, -a*sy2+z1*cy2];
-    });
-  });
+  const setZoom=v=>{ zoomTo=Math.max(-4.15,Math.min(6,v)); };
 
   for(let i=0;i<P.length;i++){ const q=P[i];
     q.q  = 0.40 + rnd()*1.10;      /* Intensitätsstreuung */
@@ -910,11 +925,10 @@ let audioOn = false, blip = null;
       else zEl.classList.remove('on');
     }
     const WS=Math.pow(ZR,-zoom);
-    let imgSet=null, imgW=0;
-    if(zoom<-0.35){
+    let imgIdx=0, imgW=0;
+    if(zoom<-0.30){
       const li=Math.min(SHAPES.length,Math.round(-zoom));
-      if(li>=1){ imgW=Math.max(0,1-Math.abs(-zoom-li)*2.3);
-        if(imgW>0) imgSet=IMGW[li-1]; }
+      if(li>=1){ imgW=Math.max(0,1-Math.abs(-zoom-li)*1.9); imgIdx=li; }
     }
     const sy=Math.sin(ry),cy=Math.cos(ry);
     const sT=Math.sin(TILT), cT=Math.cos(TILT);
@@ -935,7 +949,7 @@ let audioOn = false, blip = null;
     else { ctx.fillStyle='rgba(0,0,0,.44)'; ctx.fillRect(0,0,W,H); }
     ctx.globalCompositeOperation='lighter';
 
-    const narrow=W<820;
+    const narrow=W<820, anaOff=imgW>0.01;
     const g0=zAct?Math.floor(zoom)-1:0, g1=zAct?Math.floor(zoom)+(narrow?1:2):0;
     for(let gen=g0;gen<=g1;gen++){
     const GS=Math.pow(ZR,gen-zoom);
@@ -948,6 +962,7 @@ let audioOn = false, blip = null;
     const stp=(gen===0||!zAct)?1:2;
     for(let i=0;i<P.length;i+=stp){
       const p=P[i];
+      if(anaOff&&p.ana) continue;          /* Bildpunkte laufen in eigener Ebene */
       let X=p.x,Y=p.y,Z=p.z,ballMix=0;
       if(intro<1){
         const app=Math.max(0,Math.min(1,(t-p.pop)/.45));
@@ -959,11 +974,7 @@ let audioOn = false, blip = null;
         X=SX+(p.x-SX)*e; Y=SY+(p.y-SY)*e; Z=SZ+(p.z-SZ)*e;
       }
       let XS=X*GS, YS=Y*GS, ZS=Z*GS;
-      if(p.ana&&imgSet&&gen===0){
-        const T2=imgSet[p.ai];
-        if(T2){ const e2=imgW*imgW*(3-2*imgW);
-          XS+= (T2[0]-XS)*e2; YS+= (T2[1]-YS)*e2; ZS+= (T2[2]-ZS)*e2; }
-      }
+
       const x1=XS*cy-ZS*sy, z1=XS*sy+ZS*cy;
       const y2=YS*cT-z1*sT, z2=YS*sT+z1*cT+camZ;
       if(z2<5) continue;
@@ -1042,6 +1053,38 @@ let audioOn = false, blip = null;
         ctx.fillStyle=q[3]?`rgba(255,132,52,${a})`:`rgba(130,170,225,${a})`;
         ctx.fill();
       }
+    }
+
+    /* ── versteckte Bilder beim Herauszoomen ── */
+    if(imgW>0.01){
+      const shape=SHAPES[imgIdx-1];
+      const bloom=imgW>0.55;
+      const e2=imgW*imgW*(3-2*imgW);
+      const IS=Math.min(W,H)*0.33;
+      ctx.globalCompositeOperation='lighter';
+      for(let i=0;i<NA;i++){
+        const p=P[ANA_START+i]; if(!p) continue;
+        const q=shape[p.ai!==undefined?p.ai:i]; if(!q) continue;
+        /* Ausgangslage: wo der Punkt normal läge */
+        const X=p.x*WS, Y=p.y*WS, Z=p.z*WS;
+        const x1=X*cy-Z*sy, z1=X*sy+Z*cy;
+        const y2=Y*cT-z1*sT, z2=Y*sT+z1*cT+camZ;
+        let bx=ox, by=oy;
+        if(z2>5){ bx=ox+f*x1/z2; by=oy-f*y2/z2; }
+        /* Zielort: der Bildpunkt */
+        const tx2=ox+q[0]*IS, ty2=oy-q[1]*IS;
+        const sx=bx+(tx2-bx)*e2, sy2=by+(ty2-by)*e2;
+        if(sx<-40||sx>W+40||sy2<-40||sy2>H+40) continue;
+        const a=Math.min(1,(0.06+0.92*e2)*p.q*0.9);
+        const r=(0.7+1.5*e2)*p.rs;
+        ctx.fillStyle='rgba(255,'+((120+110*e2)|0)+','+((45+95*e2)|0)+','+a+')';
+        if(r<0.95){ const u=1/DPR;
+          ctx.fillRect(Math.round(sx*DPR)/DPR,Math.round(sy2*DPR)/DPR,u,u); }
+        else { ctx.beginPath(); ctx.arc(sx,sy2,r,0,6.283); ctx.fill(); }
+        if(bloom){ ctx.beginPath(); ctx.arc(sx,sy2,r*2.6,0,6.283);
+          ctx.fillStyle='rgba(255,160,80,'+(a*0.07)+')'; ctx.fill(); }
+      }
+      ctx.globalCompositeOperation='source-over';
     }
 
     /* ── Wurf ── */
@@ -1505,7 +1548,7 @@ blip=()=>{};
 (function(){
   const mail=document.getElementById('mail'),go=document.getElementById('join'),hint=document.getElementById('hint');
   function join(){
-    const v=mail.value.trim();
+    const v=mail.value.trim().toLowerCase();
     if(!/^\S+@\S+\.\S+$/.test(v)){
       hint.textContent='CHECK THAT ADDRESS — TRY NAME@EMAIL.COM';
       hint.style.color='#FF6B1A'; mail.focus(); if(window.SFX) SFX.err(); return;

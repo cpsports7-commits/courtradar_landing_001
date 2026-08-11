@@ -78,7 +78,18 @@ body{background:var(--void);color:var(--chalk);font-family:"Inter",system-ui,san
 .brand b{font-family:var(--disp);
   font-size:14px;letter-spacing:.26em;color:var(--chalk)}
 .hud-r{display:flex;align-items:center;gap:clamp(12px,3vw,26px)}
-.live{display:flex;align-items:center;gap:7px;color:#9CA9BF}
+.mapwrap{position:fixed;inset:0;z-index:60;opacity:0;visibility:hidden;
+  transition:opacity .4s cubic-bezier(.22,1,.36,1),visibility .4s;background:#04060b}
+.mapwrap.on{opacity:1;visibility:visible}
+.mapwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+#mapclose{position:absolute;top:14px;right:clamp(14px,4vw,28px);z-index:2;
+  background:rgba(0,0,0,.6);border:1px solid var(--hair);color:var(--chalk);
+  font-family:var(--hud);font-size:9px;letter-spacing:.18em;padding:9px 13px;cursor:pointer}
+#mapclose:hover{border-color:rgba(255,107,26,.6);color:var(--signal)}
+.live{display:flex;align-items:center;gap:7px;color:#9CA9BF;background:none;border:0;
+  font-family:var(--hud);font-size:inherit;letter-spacing:inherit;padding:0;
+  cursor:pointer;transition:color .2s}
+.live:hover{color:var(--signal)}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--signal);animation:ping 2.4s infinite}
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,107,26,.55)}70%{box-shadow:0 0 0 8px rgba(255,107,26,0)}100%{box-shadow:0 0 0 0 rgba(255,107,26,0)}}
 .snd#snd:not(.on){border-color:rgba(255,107,26,.55);color:var(--signal);
@@ -207,13 +218,10 @@ h1.glitch{animation:glitch .38s steps(2,end)}
 .legal{max-width:330px;margin-top:12px;font-size:8px;line-height:1.55;color:#4E596C;
   opacity:0;animation:rise 1s 1.9s cubic-bezier(.22,1,.36,1) forwards}
 
-.legal a{color:#7E8CA2;border-bottom:1px solid rgba(255,255,255,.14)}
-.legal a:hover{color:var(--signal);border-bottom-color:rgba(255,107,26,.5)}
 .lawlinks{margin-top:12px;font-family:var(--hud);font-size:8.5px;letter-spacing:.18em;
   text-transform:uppercase;opacity:0;animation:rise 1s 2.1s cubic-bezier(.22,1,.36,1) forwards}
-.lawlinks a{color:#5E6B80;text-decoration:none;border:0}
+.lawlinks a{color:#5E6B80;text-decoration:none}
 .lawlinks a:hover{color:var(--signal)}
-@media(max-width:780px){.lawlinks{font-size:8px;margin-top:10px}}
 .hint{margin-top:14px;font-family:var(--hud);font-size:9.5px;letter-spacing:.13em;color:#7E8CA2;
   opacity:0;animation:rise 1s 1.75s ease forwards;transition:color .3s}
 
@@ -377,6 +385,11 @@ body.forced #trailer{display:none!important}
 <div id="subl" class="subl"></div>
 <div id="zlvl" class="zlvl"></div>
 
+<div id="mapwrap" class="mapwrap">
+  <iframe id="mapframe" title="CourtRadar map" loading="lazy"></iframe>
+  <button id="mapclose" aria-label="Close map">CLOSE ✕</button>
+</div>
+
 <main class="screen">
   <header class="hud">
     <div class="brand">
@@ -389,7 +402,7 @@ body.forced #trailer{display:none!important}
     </div>
     <div class="hud-r">
       <span class="ssn">SEASON 01 · PRE-SEASON</span>
-      <span class="live"><i class="dot"></i>SCAN ACTIVE</span>
+      <button class="live" id="scanbtn"><i class="dot"></i>SCAN ACTIVE · 349 COURTS</button>
       
     </div>
   </header>
@@ -418,9 +431,9 @@ body.forced #trailer{display:none!important}
       <input id="mail" type="email" placeholder="your@email.com" aria-label="Email address" autocomplete="email">
       <button class="go" id="join">Claim your spot</button>
     </div>
-    <p class="hint" id="hint">EARLY ACCESS OPENS CITY BY CITY</p>
-    <p class="legal">Mit dem Absenden stimmst du zu, dass wir deine E-Mail speichern, um dich zum Start von Season 01 zu benachrichtigen. Keine Weitergabe an Dritte, kein Newsletter, jederzeit widerrufbar. Mehr in der <a href="/datenschutz.html">Datenschutzerklärung</a>.</p>
     <p class="lawlinks"><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a></p>
+    <p class="hint" id="hint">EARLY ACCESS OPENS CITY BY CITY</p>
+    <p class="legal">Mit dem Absenden stimmst du zu, dass wir deine E-Mail speichern, um dich zum Start von Season 01 zu benachrichtigen. Keine Weitergabe an Dritte, kein Newsletter, jederzeit widerrufbar.</p>
   </section>
 
   <footer class="bottom">
@@ -692,7 +705,7 @@ let audioOn = false, blip = null;
     if(L>=0){const n=ZCAM.length;return ZCAM[((L%n)+n)%n];}
     return ZOUT[Math.min(ZOUT.length-1,-L-1)];
   };
-  const setZoom=v=>{ zoomTo=Math.max(-4.15,Math.min(6,v)); };
+  const setZoom=v=>{ zoomTo=Math.max(-4.15,Math.min(1.6,v)); };
 
   for(let i=0;i<P.length;i++){ const q=P[i];
     q.q  = 0.40 + rnd()*1.10;      /* Intensitätsstreuung */
@@ -953,11 +966,11 @@ let audioOn = false, blip = null;
     const spin=Math.min(t,BALL_END)*1.55, bs=Math.sin(spin), bc=Math.cos(spin);
     const byc=3.6+Math.sin(t*2.1)*.22;
     const port=H/W>1.3;
-    const f=Math.min(W,H)*FOV*(port?1.72:1);
+    const f=Math.min(W,H)*FOV*(port?0.62:1);
     const scanX=-HW-2+((t*6.4)%((HW+2)*2));
     const liv=intro<1?0:1;
     const ox=W/2+px*38+Math.sin(t*0.83)*2.4*liv,
-          oy=H*(port?0.29:0.54)+py*24+Math.cos(t*0.61)*1.9*liv;
+          oy=H*(port?0.22:0.54)+py*24+Math.cos(t*0.61)*1.9*liv;
 
     ctx.globalCompositeOperation='source-over';
     if((camOn&&camClock<0.07)||intro<1||zAct) ctx.clearRect(0,0,W,H);
@@ -1075,7 +1088,8 @@ let audioOn = false, blip = null;
       const shape=SHAPES[imgIdx-1];
       const bloom=imgW>0.55;
       const e2=imgW*imgW*(3-2*imgW);
-      const IS=Math.min(W,H)*0.33;
+      const IS=Math.min(W,H)*0.30;
+      const iox=W/2, ioy=H*0.42;
       ctx.globalCompositeOperation='lighter';
       for(let i=0;i<NA;i++){
         const p=P[ANA_START+i]; if(!p) continue;
@@ -1087,7 +1101,7 @@ let audioOn = false, blip = null;
         let bx=ox, by=oy;
         if(z2>5){ bx=ox+f*x1/z2; by=oy-f*y2/z2; }
         /* Zielort: der Bildpunkt */
-        const tx2=ox+q[0]*IS, ty2=oy-q[1]*IS;
+        const tx2=iox+q[0]*IS, ty2=ioy-q[1]*IS;
         const sx=bx+(tx2-bx)*e2, sy2=by+(ty2-by)*e2;
         if(sx<-40||sx>W+40||sy2<-40||sy2>H+40) continue;
         const a=Math.min(1,(0.06+0.92*e2)*p.q*0.9);
@@ -1557,6 +1571,25 @@ blip=()=>{};
     }
   });
   document.getElementById('rep').addEventListener('click',()=>SFX.click());
+})();
+
+/* ══════ Karte als Overlay ══════ */
+(function(){
+  const btn=document.getElementById('scanbtn'), wrap=document.getElementById('mapwrap');
+  const frame=document.getElementById('mapframe'), close=document.getElementById('mapclose');
+  if(!btn||!wrap||!frame) return;
+  let loaded=false;
+  function open(){
+    if(!loaded){ frame.src='/map.html'; loaded=true; }
+    wrap.classList.add('on');
+    document.body.style.overflow='hidden';
+    if(window.SFX) SFX.whoosh();
+  }
+  function shut(){ wrap.classList.remove('on'); document.body.style.overflow=''; }
+  btn.addEventListener('click',open);
+  close.addEventListener('click',shut);
+  addEventListener('keydown',e=>{ if(e.key==='Escape'&&wrap.classList.contains('on')) shut(); });
+  addEventListener('message',e=>{ if(e.data==='courtradar:close') shut(); });
 })();
 
 /* ══════ waitlist ══════ */

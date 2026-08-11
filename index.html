@@ -705,7 +705,7 @@ let audioOn = false, blip = null;
     if(L>=0){const n=ZCAM.length;return ZCAM[((L%n)+n)%n];}
     return ZOUT[Math.min(ZOUT.length-1,-L-1)];
   };
-  const setZoom=v=>{ zoomTo=Math.max(-4.15,Math.min(6,v)); };
+  const setZoom=v=>{ zoomTo=Math.max(-4.15,Math.min(1.6,v)); };
 
   for(let i=0;i<P.length;i++){ const q=P[i];
     q.q  = 0.40 + rnd()*1.10;      /* Intensitätsstreuung */

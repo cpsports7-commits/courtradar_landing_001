@@ -35,6 +35,7 @@ canvas:active{cursor:grabbing}
   color:var(--chalk);margin-bottom:8px}
 .info i{font-style:normal;color:#6E7C93}
 .info em{font-style:normal;color:var(--signal)}
+.info .add{margin-top:8px;font-size:8px;color:#6E7C93;letter-spacing:.1em}
 .info .k{margin-top:10px;padding-top:9px;border-top:1px solid var(--hair);color:#FF8A3C}
 .legend{position:fixed;left:clamp(12px,3vw,24px);bottom:72px;z-index:10;
   font-size:7px;letter-spacing:.14em;color:#6E7C93;line-height:1.9}
@@ -115,9 +116,9 @@ function draw(t){
   }
   ctx.globalCompositeOperation='source-over';
   if(sel) dirty=true;
-  const km=(100/(sc*p.kx))*111;
+  const km=(100/sc)*111*Math.cos(lat*Math.PI/180);
   document.getElementById('legend').innerHTML=
-    pts.length+' COURTS IN VIEW &nbsp;·&nbsp; SCALE ~'+km.toFixed(1)+' KM<br>'+
+    pts.length+' COURTS IN VIEW &nbsp;·&nbsp; '+(km<1?Math.round(km*1000)+' M':km.toFixed(1)+' KM')+' PER 100PX<br>'+
     'MAP DATA © OPENSTREETMAP CONTRIBUTORS (ODbL)';
 }
 requestAnimationFrame(draw);
@@ -127,13 +128,20 @@ function show(d){
   const typ=d[5]===1?'Half court':(d[5]>=4?'Double court':(d[5]===2?'Full court':'—'));
   const name=d[2]||('COURT '+(Math.abs(Math.round(d[0]*1e4)+Math.round(d[1]*1e4))%900+100));
   info.classList.add('on');
-  info.innerHTML='<b>'+name+'</b>'+
-    'Type: <em>'+typ+'</em><br>'+
-    (d[3]?'Surface: <em>'+d[3]+'</em>':'Surface: <i>unknown</i>')+'<br>'+
-    (d[5]?'Hoops: <em>'+d[5]+'</em>':'Hoops: <i>unknown</i>')+'<br>'+
-    (d[4]===1?'Floodlight: <em>yes</em>':(d[4]===0?'Floodlight: <i>no</i>':'Floodlight: <i>unknown</i>'))+
-    (d[6]?'<br>Access: <em>'+d[6]+'</em>':'')+
-    '<div class="k">KING OF THE COURT<br><i>Unclaimed — up for grabs in Season 01</i></div>';
+  const rows=[], miss=[];
+  if(d[5]) rows.push('Type: <em>'+typ+'</em>'); else miss.push('type');
+  if(d[3]) rows.push('Surface: <em>'+d[3]+'</em>'); else miss.push('surface');
+  if(d[5]) rows.push('Hoops: <em>'+d[5]+'</em>');
+  if(d[4]===1) rows.push('Floodlight: <em>yes</em>');
+  else if(d[4]===0) rows.push('Floodlight: <em>no</em>');
+  else miss.push('lights');
+  if(d[6]) rows.push('Access: <em>'+d[6]+'</em>');
+  let body=rows.join('<br>');
+  if(!rows.length) body='<i>No details mapped yet.</i>';
+  else if(miss.length) body+='<br><i>Not mapped: '+miss.join(', ')+'</i>';
+  info.innerHTML='<b>'+name+'</b>'+body+
+    '<div class="k">KING OF THE COURT<br><i>Unclaimed — up for grabs in Season 01</i></div>'+
+    (miss.length?'<div class="add">Know this court? Help us fill the gaps.</div>':'');
 }
 let drag=false,dx=0,dy=0,moved=0,pin=0,pinS=0;
 cv.addEventListener('pointerdown',e=>{drag=true;dx=e.clientX;dy=e.clientY;moved=0;
